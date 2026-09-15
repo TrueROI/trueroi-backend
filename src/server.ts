@@ -1,10 +1,8 @@
 console.log("SERVER STARTING...");
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import routes from "./routes/index";
 import prisma from "./utils/db";
-
 
 const app = express();
 app.use(cors());
@@ -74,9 +72,6 @@ app.get("/shopify/callback", async (req, res) => {
 
   const data = await response.json();
   const accessToken = data.access_token;
-
-  // TODO: Save accessToken + shop to your database
-  // prisma.shop.create({ data: { shop, accessToken } })
 
   res.send("App installed successfully");
 });

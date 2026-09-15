@@ -65,8 +65,6 @@ app.get("/shopify/callback", async (req, res) => {
     });
     const data = await response.json();
     const accessToken = data.access_token;
-    // TODO: Save accessToken + shop to your database
-    // prisma.shop.create({ data: { shop, accessToken } })
     res.send("App installed successfully");
 });
 // -----------------------------

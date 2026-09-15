@@ -41,7 +41,7 @@ app.get("/shopify/install", (req, res) => {
     if (!shop)
         return res.status(400).send("Missing shop parameter");
     const clientId = process.env.SHOPIFY_API_KEY;
-    const redirectUri = "https://gettrueroi.com/shopify/callback";
+    const redirectUri = "https://trueroi-backend-production-778c.up.railway.app/shopify/callback";
     const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=&redirect_uri=${redirectUri}`;
     res.redirect(installUrl);
 });
@@ -49,23 +49,40 @@ app.get("/shopify/install", (req, res) => {
 app.get("/shopify/callback", async (req, res) => {
     const shop = req.query.shop;
     const code = req.query.code;
-    if (!shop || !code)
+    if (!shop || !code) {
         return res.status(400).send("Missing parameters");
+    }
     const clientId = process.env.SHOPIFY_API_KEY;
     const clientSecret = process.env.SHOPIFY_API_SECRET;
     const tokenUrl = `https://${shop}/admin/oauth/access_token`;
-    const response = await fetch(tokenUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            client_id: clientId,
-            client_secret: clientSecret,
-            code
-        })
-    });
-    const data = await response.json();
-    const accessToken = data.access_token;
-    res.send("App installed successfully");
+    try {
+        const response = await fetch(tokenUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                client_id: clientId,
+                client_secret: clientSecret,
+                code
+            })
+        });
+        const text = await response.text();
+        console.log("Shopify token response:", text);
+        // Try parsing JSON only if it looks like JSON
+        let data;
+        try {
+            data = JSON.parse(text);
+        }
+        catch {
+            return res.status(500).send("Shopify returned an HTML error:\n\n" + text);
+        }
+        const accessToken = data.access_token;
+        console.log("Access token:", accessToken);
+        res.send("App installed successfully");
+    }
+    catch (err) {
+        console.error("Callback error:", err);
+        res.status(500).send("Internal server error");
+    }
 });
 // -----------------------------
 // API ROUTES

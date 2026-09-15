@@ -5,7 +5,6 @@ import dotenv from "dotenv";
 import routes from "./routes/index";
 import prisma from "./utils/db";
 
-dotenv.config();
 
 const app = express();
 app.use(cors());

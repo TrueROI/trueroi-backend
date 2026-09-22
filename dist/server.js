@@ -41,7 +41,7 @@ app.get("/shopify/install", (req, res) => {
     if (!shop)
         return res.status(400).send("Missing shop parameter");
     const clientId = process.env.SHOPIFY_API_KEY;
-    const redirectUri = "https://trueroi-backend-production-778c.up.railway.app/shopify/callback";
+    const redirectUri = "https://trueroi-backend-production.up.railway.app/shopify/callback";
     const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=&redirect_uri=${redirectUri}`;
     res.redirect(installUrl);
 });

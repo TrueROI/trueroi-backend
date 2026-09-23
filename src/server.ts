@@ -43,7 +43,7 @@ app.get("/shopify/install", (req, res) => {
   const clientId = process.env.SHOPIFY_API_KEY!;
   const redirectUri = "https://trueroi-backend-production.up.railway.app/shopify/callback";
 
-  const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=&redirect_uri=${redirectUri}`;
+  const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=read_products,read_shop&redirect_uri=${redirectUri}`;
 
   res.redirect(installUrl);
 });

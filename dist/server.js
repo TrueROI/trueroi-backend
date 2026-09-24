@@ -8,6 +8,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const index_1 = __importDefault(require("./routes/index"));
 const db_1 = __importDefault(require("./utils/db"));
+const shopifyClient_1 = require("./utils/shopifyClient"); // ⭐ NEW IMPORT
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
@@ -120,7 +121,7 @@ app.get("/shopify/callback", async (req, res) => {
     }
 });
 // -----------------------------
-// ⭐ SHOPIFY API TEST ROUTE (Step 2)
+// ⭐ SHOPIFY API TEST ROUTE (NOW USING SHOPIFYCLIENT)
 // -----------------------------
 app.get("/shopify/test", async (req, res) => {
     try {
@@ -132,14 +133,10 @@ app.get("/shopify/test", async (req, res) => {
         });
         if (!token)
             return res.status(404).send("No token found");
-        const url = `https://${shop.domain}/admin/api/2024-10/shop.json`;
-        const response = await fetch(url, {
-            headers: {
-                "X-Shopify-Access-Token": token.value,
-                "Content-Type": "application/json"
-            }
-        });
-        const data = await response.json();
+        // ⭐ Use your new wrapper
+        const shopify = new shopifyClient_1.ShopifyClient(shop.domain, token.value);
+        // ⭐ Call Shopify API using wrapper
+        const data = await shopify.get("/shop.json");
         console.log("Shopify API response:", data);
         res.json(data);
     }

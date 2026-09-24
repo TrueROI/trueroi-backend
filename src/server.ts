@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import routes from "./routes/index";
 import prisma from "./utils/db";
+import { ShopifyClient } from "./utils/shopifyClient"; // ⭐ NEW IMPORT
 
 const app = express();
 app.use(cors());
@@ -139,7 +140,7 @@ app.get("/shopify/callback", async (req, res) => {
 });
 
 // -----------------------------
-// ⭐ SHOPIFY API TEST ROUTE (Step 2)
+// ⭐ SHOPIFY API TEST ROUTE (NOW USING SHOPIFYCLIENT)
 // -----------------------------
 app.get("/shopify/test", async (req, res) => {
   try {
@@ -151,18 +152,13 @@ app.get("/shopify/test", async (req, res) => {
     });
     if (!token) return res.status(404).send("No token found");
 
-    const url = `https://${shop.domain}/admin/api/2024-10/shop.json`;
+    // ⭐ Use your new wrapper
+    const shopify = new ShopifyClient(shop.domain, token.value);
 
-    const response = await fetch(url, {
-      headers: {
-        "X-Shopify-Access-Token": token.value,
-        "Content-Type": "application/json"
-      }
-    });
+    // ⭐ Call Shopify API using wrapper
+    const data = await shopify.get("/shop.json");
 
-    const data = await response.json();
     console.log("Shopify API response:", data);
-
     res.json(data);
 
   } catch (err) {

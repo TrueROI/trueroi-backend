@@ -8,7 +8,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const index_1 = __importDefault(require("./routes/index"));
 const db_1 = __importDefault(require("./utils/db"));
-const shopifyClient_1 = require("./utils/shopifyClient"); // ⭐ NEW IMPORT
+const shopifyClient_1 = require("./utils/shopifyClient");
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
@@ -30,6 +30,12 @@ app.get("/health/db", async (req, res) => {
         res.json({ status: "ok", db: "connected" });
     }
     catch (err) {
+        if (err instanceof Error) {
+            console.error("DB health error:", err.message);
+        }
+        else {
+            console.error("DB health error:", err);
+        }
         res.status(500).json({ status: "error", db: "disconnected" });
     }
 });
@@ -51,7 +57,6 @@ app.get("/shopify/callback", async (req, res) => {
     console.log("FULL CALLBACK QUERY:", req.query);
     const shopDomain = req.query.shop;
     const code = req.query.code;
-    // ⭐ Ignore Shopify background callbacks
     if (!code) {
         console.log("Ignoring callback without code (Shopify background request)");
         return res.send("OK");
@@ -110,7 +115,12 @@ app.get("/shopify/callback", async (req, res) => {
         res.send("App installed successfully");
     }
     catch (err) {
-        console.error("Callback error:", err);
+        if (err instanceof Error) {
+            console.error("Callback error:", err.message);
+        }
+        else {
+            console.error("Callback error:", err);
+        }
         res.status(500).send("Internal server error");
     }
 });
@@ -133,7 +143,12 @@ app.get("/shopify/test", async (req, res) => {
         res.json(data);
     }
     catch (err) {
-        console.error("Shopify API error:", err);
+        if (err instanceof Error) {
+            console.error("Shopify API error:", err.message);
+        }
+        else {
+            console.error("Shopify API error:", err);
+        }
         res.status(500).send("Error calling Shopify API");
     }
 });
@@ -156,7 +171,12 @@ app.get("/shopify/products", async (req, res) => {
         res.json(data);
     }
     catch (err) {
-        console.error("Products API error:", err);
+        if (err instanceof Error) {
+            console.error("Products API error:", err.message);
+        }
+        else {
+            console.error("Products API error:", err);
+        }
         res.status(500).send("Error pulling products");
     }
 });
@@ -169,7 +189,14 @@ app.use("/api", index_1.default);
 // -----------------------------
 db_1.default.$connect()
     .then(() => console.log("Connected to database"))
-    .catch((err) => console.error("DB connection error:", err));
+    .catch((err) => {
+    if (err instanceof Error) {
+        console.error("DB connection error:", err.message);
+    }
+    else {
+        console.error("DB connection error:", err);
+    }
+});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

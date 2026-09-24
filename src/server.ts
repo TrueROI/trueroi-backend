@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import routes from "./routes/index";
 import prisma from "./utils/db";
-import { ShopifyClient } from "./utils/shopifyClient"; // ⭐ NEW IMPORT
+import { ShopifyClient } from "./utils/shopifyClient";
 
 const app = express();
 app.use(cors());
@@ -13,7 +13,7 @@ app.use(express.json());
 // BASIC HEALTH ROUTES
 // -----------------------------
 app.get("/", (req, res) => {
-    res.send("Backend is running!");
+  res.send("Backend is running!");
 });
 
 app.get("/health", (req, res) => {
@@ -28,6 +28,11 @@ app.get("/health/db", async (req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     res.json({ status: "ok", db: "connected" });
   } catch (err) {
+    if (err instanceof Error) {
+      console.error("DB health error:", err.message);
+    } else {
+      console.error("DB health error:", err);
+    }
     res.status(500).json({ status: "error", db: "disconnected" });
   }
 });
@@ -56,7 +61,6 @@ app.get("/shopify/callback", async (req, res) => {
   const shopDomain = req.query.shop as string;
   const code = req.query.code as string;
 
-  // ⭐ Ignore Shopify background callbacks
   if (!code) {
     console.log("Ignoring callback without code (Shopify background request)");
     return res.send("OK");
@@ -127,7 +131,11 @@ app.get("/shopify/callback", async (req, res) => {
     res.send("App installed successfully");
 
   } catch (err) {
-    console.error("Callback error:", err);
+    if (err instanceof Error) {
+      console.error("Callback error:", err.message);
+    } else {
+      console.error("Callback error:", err);
+    }
     res.status(500).send("Internal server error");
   }
 });
@@ -153,7 +161,11 @@ app.get("/shopify/test", async (req, res) => {
     res.json(data);
 
   } catch (err) {
-    console.error("Shopify API error:", err);
+    if (err instanceof Error) {
+      console.error("Shopify API error:", err.message);
+    } else {
+      console.error("Shopify API error:", err);
+    }
     res.status(500).send("Error calling Shopify API");
   }
 });
@@ -179,7 +191,11 @@ app.get("/shopify/products", async (req, res) => {
     res.json(data);
 
   } catch (err) {
-    console.error("Products API error:", err);
+    if (err instanceof Error) {
+      console.error("Products API error:", err.message);
+    } else {
+      console.error("Products API error:", err);
+    }
     res.status(500).send("Error pulling products");
   }
 });
@@ -193,12 +209,18 @@ app.use("/api", routes);
 // DATABASE + SERVER START
 // -----------------------------
 prisma.$connect()
-    .then(() => console.log("Connected to database"))
-    .catch((err: unknown) => console.error("DB connection error:", err));
+  .then(() => console.log("Connected to database"))
+  .catch((err: unknown) => {
+    if (err instanceof Error) {
+      console.error("DB connection error:", err.message);
+    } else {
+      console.error("DB connection error:", err);
+    }
+  });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
 
 console.log("SERVER FILE LOADED FROM:", __filename);

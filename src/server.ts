@@ -50,6 +50,8 @@ app.get("/shopify/install", (req, res) => {
 
 // 2. FINISH OAUTH FLOW
 app.get("/shopify/callback", async (req, res) => {
+  console.log("FULL CALLBACK QUERY:", req.query);
+
   const shopDomain = req.query.shop as string;
   const code = req.query.code as string;
 

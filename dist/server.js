@@ -42,20 +42,28 @@ app.get("/shopify/install", (req, res) => {
         return res.status(400).send("Missing shop parameter");
     const clientId = process.env.SHOPIFY_API_KEY;
     const redirectUri = "https://trueroi-backend-production.up.railway.app/shopify/callback";
-    const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=&redirect_uri=${redirectUri}`;
+    const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=read_products,read_shop&redirect_uri=${redirectUri}`;
     res.redirect(installUrl);
 });
 // 2. FINISH OAUTH FLOW
 app.get("/shopify/callback", async (req, res) => {
-    const shop = req.query.shop;
+    console.log("FULL CALLBACK QUERY:", req.query);
+    const shopDomain = req.query.shop;
     const code = req.query.code;
-    if (!shop || !code) {
-        return res.status(400).send("Missing parameters");
+    // ⭐ NEW FIX: Ignore Shopify background callbacks
+    if (!code) {
+        console.log("Ignoring callback without code (Shopify background request)");
+        return res.send("OK");
     }
+    if (!shopDomain) {
+        return res.status(400).send("Missing shop parameter");
+    }
+    console.log("Saving shop + token now...");
     const clientId = process.env.SHOPIFY_API_KEY;
     const clientSecret = process.env.SHOPIFY_API_SECRET;
-    const tokenUrl = `https://${shop}/admin/oauth/access_token`;
+    const tokenUrl = `https://${shopDomain}/admin/oauth/access_token`;
     try {
+        // Exchange code for access token
         const response = await fetch(tokenUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -67,7 +75,6 @@ app.get("/shopify/callback", async (req, res) => {
         });
         const text = await response.text();
         console.log("Shopify token response:", text);
-        // Try parsing JSON only if it looks like JSON
         let data;
         try {
             data = JSON.parse(text);
@@ -77,11 +84,68 @@ app.get("/shopify/callback", async (req, res) => {
         }
         const accessToken = data.access_token;
         console.log("Access token:", accessToken);
+        // -----------------------------
+        // SAVE SHOP + TOKEN IN DATABASE
+        // -----------------------------
+        const DEFAULT_USER_ID = "4dc12f02-bf5d-4690-a609-c6806711d57c";
+        // 1. Find or create the shop
+        let shopRecord = await db_1.default.shop.findUnique({
+            where: { domain: shopDomain }
+        });
+        if (!shopRecord) {
+            shopRecord = await db_1.default.shop.create({
+                data: {
+                    name: shopDomain.replace(".myshopify.com", ""),
+                    domain: shopDomain,
+                    userId: DEFAULT_USER_ID
+                }
+            });
+            console.log("Created new shop:", shopRecord.id);
+        }
+        // 2. Save the token
+        await db_1.default.token.create({
+            data: {
+                type: "shopify",
+                value: accessToken,
+                userId: DEFAULT_USER_ID,
+                shopId: shopRecord.id
+            }
+        });
+        console.log("Saved Shopify token for shop:", shopRecord.domain);
         res.send("App installed successfully");
     }
     catch (err) {
         console.error("Callback error:", err);
         res.status(500).send("Internal server error");
+    }
+});
+// -----------------------------
+// ⭐ SHOPIFY API TEST ROUTE (Step 2)
+// -----------------------------
+app.get("/shopify/test", async (req, res) => {
+    try {
+        const shop = await db_1.default.shop.findFirst();
+        if (!shop)
+            return res.status(404).send("No shop found");
+        const token = await db_1.default.token.findFirst({
+            where: { shopId: shop.id }
+        });
+        if (!token)
+            return res.status(404).send("No token found");
+        const url = `https://${shop.domain}/admin/api/2024-10/shop.json`;
+        const response = await fetch(url, {
+            headers: {
+                "X-Shopify-Access-Token": token.value,
+                "Content-Type": "application/json"
+            }
+        });
+        const data = await response.json();
+        console.log("Shopify API response:", data);
+        res.json(data);
+    }
+    catch (err) {
+        console.error("Shopify API error:", err);
+        res.status(500).send("Error calling Shopify API");
     }
 });
 // -----------------------------

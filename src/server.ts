@@ -56,7 +56,7 @@ app.get("/shopify/callback", async (req, res) => {
   const shopDomain = req.query.shop as string;
   const code = req.query.code as string;
 
-  // ⭐ NEW FIX: Ignore Shopify background callbacks
+  // ⭐ Ignore Shopify background callbacks
   if (!code) {
     console.log("Ignoring callback without code (Shopify background request)");
     return res.send("OK");
@@ -73,7 +73,6 @@ app.get("/shopify/callback", async (req, res) => {
   const tokenUrl = `https://${shopDomain}/admin/oauth/access_token`;
 
   try {
-    // Exchange code for access token
     const response = await fetch(tokenUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -97,13 +96,8 @@ app.get("/shopify/callback", async (req, res) => {
     const accessToken = data.access_token;
     console.log("Access token:", accessToken);
 
-    // -----------------------------
-    // SAVE SHOP + TOKEN IN DATABASE
-    // -----------------------------
-
     const DEFAULT_USER_ID = "4dc12f02-bf5d-4690-a609-c6806711d57c";
 
-    // 1. Find or create the shop
     let shopRecord = await prisma.shop.findUnique({
       where: { domain: shopDomain }
     });
@@ -119,7 +113,6 @@ app.get("/shopify/callback", async (req, res) => {
       console.log("Created new shop:", shopRecord.id);
     }
 
-    // 2. Save the token
     await prisma.token.create({
       data: {
         type: "shopify",
@@ -140,7 +133,7 @@ app.get("/shopify/callback", async (req, res) => {
 });
 
 // -----------------------------
-// ⭐ SHOPIFY API TEST ROUTE (NOW USING SHOPIFYCLIENT)
+// ⭐ SHOPIFY API TEST ROUTE
 // -----------------------------
 app.get("/shopify/test", async (req, res) => {
   try {
@@ -152,10 +145,8 @@ app.get("/shopify/test", async (req, res) => {
     });
     if (!token) return res.status(404).send("No token found");
 
-    // ⭐ Use your new wrapper
     const shopify = new ShopifyClient(shop.domain, token.value);
 
-    // ⭐ Call Shopify API using wrapper
     const data = await shopify.get("/shop.json");
 
     console.log("Shopify API response:", data);
@@ -164,6 +155,32 @@ app.get("/shopify/test", async (req, res) => {
   } catch (err) {
     console.error("Shopify API error:", err);
     res.status(500).send("Error calling Shopify API");
+  }
+});
+
+// -----------------------------
+// ⭐ SHOPIFY PRODUCTS ROUTE
+// -----------------------------
+app.get("/shopify/products", async (req, res) => {
+  try {
+    const shop = await prisma.shop.findFirst();
+    if (!shop) return res.status(404).send("No shop found");
+
+    const token = await prisma.token.findFirst({
+      where: { shopId: shop.id }
+    });
+    if (!token) return res.status(404).send("No token found");
+
+    const shopify = new ShopifyClient(shop.domain, token.value);
+
+    const data = await shopify.get("/products.json");
+
+    console.log("Products:", data);
+    res.json(data);
+
+  } catch (err) {
+    console.error("Products API error:", err);
+    res.status(500).send("Error pulling products");
   }
 });
 

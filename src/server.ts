@@ -180,19 +180,31 @@ app.get("/shopify/products", async (req, res) => {
       where: { domain: "trueroi-dev-store.myshopify.com" }
     });
 
+    // ⭐ DEBUG LOGS — moved ABOVE ShopifyClient
     console.log("SHOP LOADED:", shop);
 
-    if (!shop) return res.status(404).send("No shop found");
+    if (!shop) {
+      console.log("❌ No shop found in DB");
+      return res.status(404).send("No shop found");
+    }
 
     const token = await prisma.token.findFirst({
       where: { shopId: shop.id },
-      orderBy: { createdAt: "desc" }
+      orderBy: [
+        { createdAt: "desc" },
+        { id: "desc" } // fallback to guarantee newest token
+      ]
     });
 
+    // ⭐ DEBUG LOGS — BEFORE ShopifyClient
     console.log("TOKEN USED:", token?.value);
 
-    if (!token) return res.status(404).send("No token found");
+    if (!token) {
+      console.log("❌ No token found for shop:", shop.id);
+      return res.status(404).send("No token found");
+    }
 
+    // ⭐ ShopifyClient is BELOW the logs now
     const shopify = new ShopifyClient(shop.domain, token.value);
 
     const data = await shopify.get("/products.json");

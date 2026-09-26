@@ -175,17 +175,23 @@ app.get("/shopify/test", async (req, res) => {
 // -----------------------------
 app.get("/shopify/products", async (req, res) => {
   try {
-    const shop = await prisma.shop.findFirst();
+    const shop = await prisma.shop.findUnique({
+      where: { domain: "trueroi-dev-store.myshopify.com" }
+    });
+
+    console.log("SHOP LOADED:", shop);
+
     if (!shop) return res.status(404).send("No shop found");
 
     const token = await prisma.token.findFirst({
       where: { shopId: shop.id },
-      orderBy: {createdAt: "desc"}
+      orderBy: { createdAt: "desc" }
     });
 
-    if (!token) {
-      return res.status(404).send("No token found");
-    }
+    console.log("TOKEN USED:", token?.value);
+
+    if (!token) return res.status(404).send("No token found");
+
     const shopify = new ShopifyClient(shop.domain, token.value);
 
     const data = await shopify.get("/products.json");
@@ -194,14 +200,11 @@ app.get("/shopify/products", async (req, res) => {
     res.json(data);
 
   } catch (err) {
-    if (err instanceof Error) {
-      console.error("Products API error:", err.message);
-    } else {
-      console.error("Products API error:", err);
-    }
+    console.error("Products API error:", err);
     res.status(500).send("Error pulling products");
   }
 });
+
 
 // -----------------------------
 // API ROUTES

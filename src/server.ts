@@ -179,10 +179,13 @@ app.get("/shopify/products", async (req, res) => {
     if (!shop) return res.status(404).send("No shop found");
 
     const token = await prisma.token.findFirst({
-      where: { shopId: shop.id }
+      where: { shopId: shop.id },
+      orderBy: {createdAt: "desc"}
     });
-    if (!token) return res.status(404).send("No token found");
 
+    if (!token) {
+      return res.status(404).send("No token found");
+    }
     const shopify = new ShopifyClient(shop.domain, token.value);
 
     const data = await shopify.get("/products.json");

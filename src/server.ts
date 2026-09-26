@@ -1,3 +1,4 @@
+console.log("RUNNING SERVER.TS VERSION: 2026-09-26");
 console.log("SERVER STARTING...");
 import express from "express";
 import cors from "cors";

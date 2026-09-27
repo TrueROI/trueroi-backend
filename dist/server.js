@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-console.log("RUNNING SERVER.TS VERSION: 2026-09-26");
 console.log("SERVER STARTING...");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
@@ -50,7 +49,7 @@ app.get("/shopify/install", (req, res) => {
         return res.status(400).send("Missing shop parameter");
     const clientId = process.env.SHOPIFY_API_KEY;
     const redirectUri = "https://trueroi-backend-production.up.railway.app/shopify/callback";
-    const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=read_products,read_shop&redirect_uri=${redirectUri}`;
+    const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=read_products,read_shop,read_inventory,read_product_listings&redirect_uri=${redirectUri}`;
     res.redirect(installUrl);
 });
 // 2. FINISH OAUTH FLOW
@@ -158,37 +157,26 @@ app.get("/shopify/test", async (req, res) => {
 // -----------------------------
 app.get("/shopify/products", async (req, res) => {
     try {
-        const shop = await db_1.default.shop.findFirst({
-            where: { domain: { contains: "trueroi-dev-store" } },
-            orderBy: { createdAt: "desc" }
-        });
-        // ⭐ DEBUG LOGS — moved ABOVE ShopifyClient
-        console.log("SHOP LOADED:", shop);
-        if (!shop) {
-            console.log("❌ No shop found in DB");
+        const shop = await db_1.default.shop.findFirst();
+        if (!shop)
             return res.status(404).send("No shop found");
-        }
         const token = await db_1.default.token.findFirst({
-            where: { shopId: shop.id },
-            orderBy: [
-                { createdAt: "desc" },
-                { id: "desc" } // fallback to guarantee newest token
-            ]
+            where: { shopId: shop.id }
         });
-        // ⭐ DEBUG LOGS — BEFORE ShopifyClient
-        console.log("TOKEN USED:", token?.value);
-        if (!token) {
-            console.log("❌ No token found for shop:", shop.id);
+        if (!token)
             return res.status(404).send("No token found");
-        }
-        // ⭐ ShopifyClient is BELOW the logs now
         const shopify = new shopifyClient_1.ShopifyClient(shop.domain, token.value);
         const data = await shopify.get("/products.json");
         console.log("Products:", data);
         res.json(data);
     }
     catch (err) {
-        console.error("Products API error:", err);
+        if (err instanceof Error) {
+            console.error("Products API error:", err.message);
+        }
+        else {
+            console.error("Products API error:", err);
+        }
         res.status(500).send("Error pulling products");
     }
 });

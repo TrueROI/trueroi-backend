@@ -176,9 +176,10 @@ app.get("/shopify/test", async (req, res) => {
 // -----------------------------
 app.get("/shopify/products", async (req, res) => {
   try {
-    const shop = await prisma.shop.findUnique({
-      where: { domain: "trueroi-dev-store.myshopify.com" }
-    });
+   const shop = await prisma.shop.findFirst({
+  where: { domain: { contains: "trueroi-dev-store" } },
+  orderBy: { createdAt: "desc" }
+});
 
     // ⭐ DEBUG LOGS — moved ABOVE ShopifyClient
     console.log("SHOP LOADED:", shop);

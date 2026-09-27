@@ -7,11 +7,8 @@ export class ShopifyClient {
     this.accessToken = accessToken;
   }
 
-  // -----------------------------
-  // GET helper
-  // -----------------------------
   async get(path: string) {
-    const url = `https://${this.shopDomain}/admin/api/2024-10${path}`;
+    const url = `https://${this.shopDomain}/admin/api/2024-07${path}`;
 
     try {
       const response = await fetch(url, {
@@ -32,11 +29,8 @@ export class ShopifyClient {
     }
   }
 
-  // -----------------------------
-  // POST helper
-  // -----------------------------
   async post(path: string, body: any) {
-    const url = `https://${this.shopDomain}/admin/api/2024-10${path}`;
+    const url = `https://${this.shopDomain}/admin/api/2024-07${path}`;
 
     try {
       const response = await fetch(url, {

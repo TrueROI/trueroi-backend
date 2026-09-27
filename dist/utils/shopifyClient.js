@@ -6,11 +6,8 @@ class ShopifyClient {
         this.shopDomain = shopDomain;
         this.accessToken = accessToken;
     }
-    // -----------------------------
-    // GET helper
-    // -----------------------------
     async get(path) {
-        const url = `https://${this.shopDomain}/admin/api/2024-10${path}`;
+        const url = `https://${this.shopDomain}/admin/api/2024-07${path}`;
         try {
             const response = await fetch(url, {
                 headers: {
@@ -28,11 +25,8 @@ class ShopifyClient {
             throw err;
         }
     }
-    // -----------------------------
-    // POST helper
-    // -----------------------------
     async post(path, body) {
-        const url = `https://${this.shopDomain}/admin/api/2024-10${path}`;
+        const url = `https://${this.shopDomain}/admin/api/2024-07${path}`;
         try {
             const response = await fetch(url, {
                 method: "POST",

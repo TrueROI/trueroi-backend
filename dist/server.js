@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+console.log("RUNNING SERVER.TS VERSION: 2026-09-26");
 console.log("SERVER STARTING...");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
@@ -157,26 +158,37 @@ app.get("/shopify/test", async (req, res) => {
 // -----------------------------
 app.get("/shopify/products", async (req, res) => {
     try {
-        const shop = await db_1.default.shop.findFirst();
-        if (!shop)
-            return res.status(404).send("No shop found");
-        const token = await db_1.default.token.findFirst({
-            where: { shopId: shop.id }
+        const shop = await db_1.default.shop.findFirst({
+            where: { domain: { contains: "trueroi-dev-store" } },
+            orderBy: { createdAt: "desc" }
         });
-        if (!token)
+        // ⭐ DEBUG LOGS — moved ABOVE ShopifyClient
+        console.log("SHOP LOADED:", shop);
+        if (!shop) {
+            console.log("❌ No shop found in DB");
+            return res.status(404).send("No shop found");
+        }
+        const token = await db_1.default.token.findFirst({
+            where: { shopId: shop.id },
+            orderBy: [
+                { createdAt: "desc" },
+                { id: "desc" } // fallback to guarantee newest token
+            ]
+        });
+        // ⭐ DEBUG LOGS — BEFORE ShopifyClient
+        console.log("TOKEN USED:", token?.value);
+        if (!token) {
+            console.log("❌ No token found for shop:", shop.id);
             return res.status(404).send("No token found");
+        }
+        // ⭐ ShopifyClient is BELOW the logs now
         const shopify = new shopifyClient_1.ShopifyClient(shop.domain, token.value);
         const data = await shopify.get("/products.json");
         console.log("Products:", data);
         res.json(data);
     }
     catch (err) {
-        if (err instanceof Error) {
-            console.error("Products API error:", err.message);
-        }
-        else {
-            console.error("Products API error:", err);
-        }
+        console.error("Products API error:", err);
         res.status(500).send("Error pulling products");
     }
 });

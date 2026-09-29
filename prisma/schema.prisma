@@ -31,14 +31,13 @@ model Shop {
 }
 
 model Token {
-  id        String   @id @default(uuid())
-  type      String   // "shopify", "stripe", etc.
-  value     String   // actual token
-  createdAt DateTime @default(now())
-
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-
-  shopId    String?
-  shop      Shop?    @relation(fields: [shopId], references: [id])
+  id                      String   @id @default(uuid())
+  type                    String
+  value                   String
+  refreshToken            String?   // ⭐ new
+  expiresIn               Int?      // ⭐ new
+  refreshTokenExpiresIn   Int?      // ⭐ new
+  userId                  String
+  shopId                  String
+  createdAt               DateTime @default(now())
 }

@@ -14,8 +14,8 @@ model User {
   createdAt DateTime @default(now())
   name      String?
 
-  shops     Shop[]
-  tokens    Token[]
+  shops  Shop[]
+  tokens Token[]
 }
 
 model Shop {
@@ -24,20 +24,26 @@ model Shop {
   domain    String   @unique
   createdAt DateTime @default(now())
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  tokens    Token[]
+  tokens Token[]
 }
 
 model Token {
-  id                      String   @id @default(uuid())
-  type                    String
-  value                   String
-  refreshToken            String?   // ⭐ new
-  expiresIn               Int?      // ⭐ new
-  refreshTokenExpiresIn   Int?      // ⭐ new
-  userId                  String
-  shopId                  String
-  createdAt               DateTime @default(now())
+  id                    String  @id @default(uuid())
+  type                  String
+  value                 String
+  refreshToken          String?
+  expiresIn             Int?
+  refreshTokenExpiresIn Int?
+
+  // ⭐ Add these two relation fields
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  shopId String
+  shop   Shop   @relation(fields: [shopId], references: [id])
+
+  createdAt DateTime @default(now())
 }

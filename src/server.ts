@@ -84,7 +84,8 @@ app.get("/shopify/callback", async (req, res) => {
       body: JSON.stringify({
         client_id: clientId,
         client_secret: clientSecret,
-        code
+        code,
+        expiring: true   // ⭐ REQUIRED for public apps
       })
     });
 
@@ -99,7 +100,12 @@ app.get("/shopify/callback", async (req, res) => {
     }
 
     const accessToken = data.access_token;
+    const refreshToken = data.refresh_token;
+    const expiresIn = data.expires_in;
+    const refreshTokenExpiresIn = data.refresh_token_expires_in;
+
     console.log("Access token:", accessToken);
+    console.log("Refresh token:", refreshToken);
 
     const DEFAULT_USER_ID = "4dc12f02-bf5d-4690-a609-c6806711d57c";
 
@@ -118,10 +124,14 @@ app.get("/shopify/callback", async (req, res) => {
       console.log("Created new shop:", shopRecord.id);
     }
 
+    // ⭐ Save both access + refresh tokens
     await prisma.token.create({
       data: {
         type: "shopify",
         value: accessToken,
+        refreshToken: refreshToken,
+        expiresIn: expiresIn,
+        refreshTokenExpiresIn: refreshTokenExpiresIn,
         userId: DEFAULT_USER_ID,
         shopId: shopRecord.id
       }
@@ -140,6 +150,7 @@ app.get("/shopify/callback", async (req, res) => {
     res.status(500).send("Internal server error");
   }
 });
+
 
 // -----------------------------
 // ⭐ SHOPIFY API TEST ROUTE

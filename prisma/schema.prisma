@@ -28,12 +28,16 @@ model Shop {
 }
 
 model Token {
-  id        String   @id @default(uuid())
-  type      String
-  value     String
-  createdAt DateTime @default(now())
-  userId    String
-  shopId    String?
-  shop      Shop?    @relation(fields: [shopId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  id           String   @id @default(uuid())
+  type         String
+  value        String?
+  accessToken  String?
+  refreshToken String?
+  scope        String?
+  expiresAt    DateTime?
+  createdAt    DateTime @default(now())
+  userId       String
+  shopId       String?
+  shop         Shop?    @relation(fields: [shopId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
 }

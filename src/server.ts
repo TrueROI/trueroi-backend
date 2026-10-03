@@ -165,6 +165,12 @@ app.get("/shopify/test", async (req, res) => {
     });
     if (!token) return res.status(404).send("No token found");
 
+    // ⭐ FIX: ensure token.value is not null
+    if (!token.value) {
+      console.log("❌ Token value is null");
+      return res.status(500).send("Token value is missing");
+    }
+
     const shopify = new ShopifyClient(shop.domain, token.value);
 
     const data = await shopify.get("/shop.json");
@@ -182,17 +188,17 @@ app.get("/shopify/test", async (req, res) => {
   }
 });
 
+
 // -----------------------------
 // ⭐ SHOPIFY PRODUCTS ROUTE
 // -----------------------------
 app.get("/shopify/products", async (req, res) => {
   try {
-   const shop = await prisma.shop.findFirst({
-  where: { domain: { contains: "trueroi-dev-store" } },
-  orderBy: { createdAt: "desc" }
-});
+    const shop = await prisma.shop.findFirst({
+      where: { domain: { contains: "trueroi-dev-store" } },
+      orderBy: { createdAt: "desc" }
+    });
 
-    // ⭐ DEBUG LOGS — moved ABOVE ShopifyClient
     console.log("SHOP LOADED:", shop);
 
     if (!shop) {
@@ -204,11 +210,10 @@ app.get("/shopify/products", async (req, res) => {
       where: { shopId: shop.id },
       orderBy: [
         { createdAt: "desc" },
-        { id: "desc" } // fallback to guarantee newest token
+        { id: "desc" }
       ]
     });
 
-    // ⭐ DEBUG LOGS — BEFORE ShopifyClient
     console.log("TOKEN USED:", token?.value);
 
     if (!token) {
@@ -216,7 +221,12 @@ app.get("/shopify/products", async (req, res) => {
       return res.status(404).send("No token found");
     }
 
-    // ⭐ ShopifyClient is BELOW the logs now
+    // ⭐ FIX: ensure token.value is not null
+    if (!token.value) {
+      console.log("❌ Token value is null");
+      return res.status(500).send("Token value is missing");
+    }
+
     const shopify = new ShopifyClient(shop.domain, token.value);
 
     const data = await shopify.get("/products.json");
@@ -229,6 +239,7 @@ app.get("/shopify/products", async (req, res) => {
     res.status(500).send("Error pulling products");
   }
 });
+
 
 
 // -----------------------------

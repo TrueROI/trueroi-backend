@@ -127,7 +127,7 @@ app.get("/shopify/callback", async (req, res) => {
     // ⭐ Save both access + refresh tokens
     await prisma.token.create({
       data: {
-        type: "access",
+        type: "shopify",
         value: accessToken,
         refreshToken: refreshToken,
         expiresIn: expiresIn,
